@@ -17,7 +17,7 @@ $token = $_GET['token'];
              }
              ot-layout {
 				 display: block;
-                width: 50%;
+                width: 30%;
                 height: 300px;
                 position: absolute;
                 top: 0;
@@ -30,15 +30,15 @@ $token = $_GET['token'];
                 height: 300px;
                 background-color: #ccc;
                 position: absolute;
-                top: 0;
-                right: 0;
+                top: 350px;
+                left: 0;
             }
 			.slider1 {
 				width: 50%;
                 margin:auto;
-                top: 350px;
+                top: 0;
 				position:absolute;
-				left:0;
+				right:0;
 			}
 			.slider2 {
 				width: 40%;
@@ -78,7 +78,7 @@ $token = $_GET['token'];
 			</div>
 			<?php }?>
 		  </section>
-  
+		<?php if(isset($_GET['admin'])){?>
 		  <section class=" slider2">
 			<?php for($i=1;$i<=6;$i++){?>
 			<div>
@@ -86,7 +86,7 @@ $token = $_GET['token'];
 			</div>
 			<?php }?>
 		  </section>
-		
+		<?php }?>
         <script src="https://code.jquery.com/jquery-2.2.0.min.js" type="text/javascript" charset="utf-8"></script>
         
 		
@@ -118,8 +118,13 @@ $token = $_GET['token'];
 				  slidesToScroll: 1,
 				  arrows: false,
 				  fade: true,
+				  <?php if(isset($_GET['admin'])){?>
 				  asNavFor: '.slider2'
+				  <?php }else{?>
+				  swipe:false
+				  <?php }?>
 				});
+				<?php if(isset($_GET['admin'])){?>
 				$('.slider2').slick({
 				  slidesToShow: 3,
 				  slidesToScroll: 1,
@@ -128,24 +133,36 @@ $token = $_GET['token'];
 				  centerMode: true,
 				  focusOnSelect: true
 				});
+				<?php }?>
 				
-				OTSession.on('signal:presentationControl', function (event) {
-				  console.log(event);
-				});
-
 				<?php if(isset($_GET['admin'])){?>
-				OTSession.signal( 
-				 { type: 'presentationControl',
-				   data: "next"
-				 }, function(error) {
-					if (error) {
-					  console.log("signal error ("
-								   + error.code
-								   + "): " + error.message);
-					} else {
-					  console.log("signal sent.");
-					}
-				  });
+				OTSession.session.on({
+                    sessionConnected: function() {
+						$('.slider1').on('afterChange', function(event, slick, currentSlide){
+						  console.log(currentSlide);
+						  OTSession.session.signal( 
+							{  type: 'presentationControl',
+							   data: {slide:currentSlide}
+							}, 
+							function(error) {
+								if (error) {
+								  console.log("signal error ("
+											   + error.code
+											   + "): " + error.message);
+								} else {
+								  console.log("signal sent.");
+								}
+							});
+						});
+						
+                    }
+				});
+				<?php }else{?>
+				OTSession.session.on('signal:presentationControl', function (event) {
+					console.log(event);
+					//var currentSlide = $('.slider1').slick('slickCurrentSlide');
+					$('.slider1').slick('slickGoTo', event.data.slide);
+				});
 				<?php }?>
 			}])
 			.value({
