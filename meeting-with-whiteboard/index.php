@@ -34,7 +34,7 @@ $token = $_GET['token'];
                 left: 0;
             }
 			.slider1 {
-				width: 50%;
+				width: 40%;
                 margin:auto;
                 top: 0;
 				position:absolute;
@@ -52,6 +52,7 @@ $token = $_GET['token'];
 			}
 			.slick-slide{text-align:center;}
 			.slick-slide img{display:inline-block;}
+			iframe{position:absolute; right:0; top:0; width:25%; left:0; margin:auto;height:250px;}
          </style>
     </head>
     <body ng-controller="MyCtrl">
@@ -87,6 +88,9 @@ $token = $_GET['token'];
 			<?php }?>
 		  </section>
 		<?php }?>
+		
+		<iframe <?php if(!isset($_GET['admin'])){?>style="pointer-events:none;"<?php }?> id="youtube-player" width="640" height="360" src="http://www.youtube.com/embed/geTgZcHrXTc?enablejsapi=1&version=3&playerapiid=ytplayer" frameborder="0" allowfullscreen="true" allowscriptaccess="always"></iframe>
+		
         <script src="https://code.jquery.com/jquery-2.2.0.min.js" type="text/javascript" charset="utf-8"></script>
         
 		
@@ -99,11 +103,58 @@ $token = $_GET['token'];
         <script src="../OpenTok-Angular-master/opentok-angular.js" type="text/javascript" charset="utf-8"></script>
         <script src="../opentok-whiteboard-master/opentok-whiteboard.js" type="text/javascript" charset="utf-8"></script>
         <link rel="stylesheet" href="opentok-whiteboard.css" type="text/css" media="screen" charset="utf-8">
-
+		<script src="https://www.youtube.com/iframe_api"></script>
+		
         <script type="text/javascript" charset="utf-8">
-            angular.module('demo', ['opentok', 'opentok-whiteboard'])
+		
+		  var player;
+		  var scope;
+		  function onYouTubeIframeAPIReady() {
+			scope = angular.element($("body")).scope();
+			player = new YT.Player( 'youtube-player', {
+			  events: { 'onStateChange': onPlayerStateChange }
+			});
+			console.log(player);
+		  }
+		  
+		  function onPlayerStateChange(event) {
+				switch(event.data) {
+				  case 0:
+					console.log('video ended');
+					break;
+				  case 1:
+					console.log('video playing from '+player.getCurrentTime());
+					scope.video_noti('start');
+					break;
+				  case 2:
+					console.log('video paused at '+player.getCurrentTime());
+					scope.video_noti('pause');
+				}
+			}
+		angular.module('demo', ['opentok', 'opentok-whiteboard'])
             .controller('MyCtrl', ['$scope', 'OTSession', 'apiKey', 'sessionId', 'token', function($scope, OTSession, apiKey, sessionId, token) {
-                $scope.connected = false;
+                
+				$scope.video_noti = function(st){
+					OTSession.session.signal( 
+							{  type: 'youtube-player',
+							   data: st
+							}, 
+							function(error) {
+								if (error) {
+								  console.log("signal error ("
+											   + error.code
+											   + "): " + error.message);
+								} else {
+								  console.log("signal sent.");
+								}
+							});
+				};
+				
+				$('#stop').on('click', function() {
+					$('#popup-youtube-player')[0].contentWindow.postMessage('{"event":"command","func":"' + 'pauseVideo' + '","args":""}', '*');
+				});
+				
+				$scope.connected = false;
 				OTSession.init(apiKey, sessionId, token, function (err) {
 					if (!err) {
 						$scope.$apply(function () {
@@ -162,6 +213,12 @@ $token = $_GET['token'];
 					console.log(event);
 					//var currentSlide = $('.slider1').slick('slickCurrentSlide');
 					$('.slider1').slick('slickGoTo', event.data.slide);
+				});
+				OTSession.session.on('signal:youtube-player', function (event) {
+					if(event.data == 'start')
+						player.playVideo();
+					else
+						player.pauseVideo();
 				});
 				<?php }?>
 			}])
