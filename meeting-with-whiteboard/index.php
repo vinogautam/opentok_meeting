@@ -53,10 +53,30 @@ $token = $_GET['token'];
 			.slick-slide{text-align:center;}
 			.slick-slide img{display:inline-block;}
 			iframe{position:absolute; right:0; top:0; width:25%; left:0; margin:auto;height:250px;}
+			.text_chat_container{width:300px;position:fixed;top:0;bottom:0;right:-300px;background-color:#fff;z-index:1000;transition:all ease 1s;border:1px solid;}
+			.text_chat_container.visible{right:0;}
+			.text_chat_icon{position:fixed;bottom:50px;right:50px; width:50px; height:50px;border-radius:50%;background-color:#0074B0;border: 1px solid #004c88;color:#fff;cursor:pointer;z-index:1000;}
+			.text_chat_container form{position:absolute;bottom:0;text-align:center;}
          </style>
+		 <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
     </head>
     <body ng-controller="MyCtrl">
-        <div class="video_container" >
+        
+		<div class="text_chat_icon" ng-click="visible=!visible;">
+			<i class="fa fa-comments"></i>
+		</div>
+		<div class="text_chat_container" ng-class="{visible:visible}">
+			<div>
+				<p ng-repeat="c in chat">{{c}}{{c.email}} : {{c.msg}}</p>
+			</div>
+			<form>
+				<input size="43" type="text" ng-model="data.email" placeholder="Email">
+				<textarea rows="2" cols="33" ng-model="data.msg" placeholder="msg"></textarea>
+				<button ng-click="add();">Post</button>
+			</form>
+		</div>
+		
+		<div class="video_container" >
             <ot-layout props="{animate:true}">
                 <ot-subscriber ng-repeat="stream in streams" 
                     stream="stream" 
@@ -89,7 +109,7 @@ $token = $_GET['token'];
 		  </section>
 		<?php }?>
 		
-		<iframe <?php if(!isset($_GET['admin'])){?>style="pointer-events:none;"<?php }?> id="youtube-player" width="640" height="360" src="http://www.youtube.com/embed/geTgZcHrXTc?enablejsapi=1&version=3&playerapiid=ytplayer" frameborder="0" allowfullscreen="true" allowscriptaccess="always"></iframe>
+		<iframe <?php if(!isset($_GET['admin'])){?>style="pointer-events:none;"<?php }?> id="youtube-player" width="640" height="360" src="//www.youtube.com/embed/geTgZcHrXTc?enablejsapi=1&version=3&playerapiid=ytplayer" frameborder="0" allowfullscreen="true" allowscriptaccess="always"></iframe>
 		
         <script src="https://code.jquery.com/jquery-2.2.0.min.js" type="text/javascript" charset="utf-8"></script>
         
@@ -104,7 +124,7 @@ $token = $_GET['token'];
         <script src="../opentok-whiteboard-master/opentok-whiteboard.js" type="text/javascript" charset="utf-8"></script>
         <link rel="stylesheet" href="opentok-whiteboard.css" type="text/css" media="screen" charset="utf-8">
 		<script src="https://www.youtube.com/iframe_api"></script>
-		
+		<script src='https://cdn.firebase.com/js/client/2.2.1/firebase.js'></script>
         <script type="text/javascript" charset="utf-8">
 		
 		  var player;
@@ -133,7 +153,16 @@ $token = $_GET['token'];
 			}
 		angular.module('demo', ['opentok', 'opentok-whiteboard'])
             .controller('MyCtrl', ['$scope', 'OTSession', 'apiKey', 'sessionId', 'token', function($scope, OTSession, apiKey, sessionId, token) {
-                
+                $scope.chat = [];
+				var statusRef = new Firebase('https://vinogautam.firebaseio.com/opentok/');
+				statusRef.on('value', function(snapshot) {
+					$scope.chat.push(snapshot.val());
+				});
+				
+				$scope.add = function(){
+					statusRef.push($scope.data);
+				};
+				
 				$scope.video_noti = function(st){
 					OTSession.session.signal( 
 							{  type: 'youtube-player',
