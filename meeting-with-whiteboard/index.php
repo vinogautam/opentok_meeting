@@ -66,8 +66,8 @@ $token = $_GET['token'];
 			<i class="fa fa-comments"></i>
 		</div>
 		<div class="text_chat_container" ng-class="{visible:visible}">
-			<div>
-				<p ng-repeat="c in chat">{{c}}{{c.email}} : {{c.msg}}</p>
+			<div style="height:450px;overflow:auto;">
+				<p ng-repeat="c in chat"><img ng-src="http://www.gravatar.com/avatar/{{c.hash}}/?s=30"> : {{c.msg}}</p>
 			</div>
 			<form>
 				<input size="43" type="text" ng-model="data.email" placeholder="Email">
@@ -125,6 +125,8 @@ $token = $_GET['token'];
         <link rel="stylesheet" href="opentok-whiteboard.css" type="text/css" media="screen" charset="utf-8">
 		<script src="https://www.youtube.com/iframe_api"></script>
 		<script src='https://cdn.firebase.com/js/client/2.2.1/firebase.js'></script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/components/core.js'></script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/components/md5-min.js'></script>
         <script type="text/javascript" charset="utf-8">
 		
 		  var player;
@@ -156,11 +158,20 @@ $token = $_GET['token'];
                 $scope.chat = [];
 				var statusRef = new Firebase('https://vinogautam.firebaseio.com/opentok/');
 				statusRef.on('value', function(snapshot) {
-					$scope.chat.push(snapshot.val());
+					angular.forEach(snapshot.val(), function(v,k){
+						v.hash = CryptoJS.MD5(v.email).toString();
+						$scope.chat.push(v);
+					});
 				});
+				
+				$scope.gravatar = function(email){
+					encrypt = CryptoJS.MD5(email).toString();
+					return "https://www.gravatar.com/avatar/"+encrypt+"?s=40";
+				};
 				
 				$scope.add = function(){
 					statusRef.push($scope.data);
+					$scope.data.msg = '';
 				};
 				
 				$scope.video_noti = function(st){
