@@ -57,6 +57,9 @@ $token = $_GET['token'];
 			.text_chat_container.visible{right:0;}
 			.text_chat_icon{position:fixed;bottom:50px;right:50px; width:50px; height:50px;border-radius:50%;background-color:#0074B0;border: 1px solid #004c88;color:#fff;cursor:pointer;z-index:1000;}
 			.text_chat_container form{position:absolute;bottom:0;text-align:center;}
+			#messagesDiv .align_right{text-align:right;}
+			.text_chat_container form{text-align:center;}
+			.text_chat_container form input, .text_chat_container form textarea{width:90%;margin-bottom:10px;}
          </style>
 		 <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
     </head>
@@ -66,12 +69,17 @@ $token = $_GET['token'];
 			<i class="fa fa-comments"></i>
 		</div>
 		<div class="text_chat_container" ng-class="{visible:visible}">
-			<div style="height:450px;overflow:auto;">
-				<p ng-repeat="c in chat"><img ng-src="http://www.gravatar.com/avatar/{{c.hash}}/?s=30"> : {{c.msg}}</p>
+			<div id="messagesDiv" style="height:450px;overflow:auto;">
+				<p ng-repeat="c in chat" ng-class="{align_right: c.email != data.email}">
+					<img ng-if="c.email == data.email" ng-src="http://www.gravatar.com/avatar/{{c.hash}}/?s=30"> 
+					{{c.msg}}
+					<img ng-if="c.email != data.email" ng-src="http://www.gravatar.com/avatar/{{c.hash}}/?s=30"> 
+				</p>
 			</div>
 			<form>
+				<input size="43" type="text" ng-model="data.name" placeholder="Name">
 				<input size="43" type="text" ng-model="data.email" placeholder="Email">
-				<textarea rows="2" cols="33" ng-model="data.msg" placeholder="msg"></textarea>
+				<textarea rows="2" cols="33" ng-model="data.msg" placeholder="Message"></textarea>
 				<button ng-click="add();">Post</button>
 			</form>
 		</div>
@@ -154,14 +162,19 @@ $token = $_GET['token'];
 				}
 			}
 		angular.module('demo', ['opentok', 'opentok-whiteboard'])
-            .controller('MyCtrl', ['$scope', 'OTSession', 'apiKey', 'sessionId', 'token', function($scope, OTSession, apiKey, sessionId, token) {
+            .controller('MyCtrl', ['$scope', 'OTSession', 'apiKey', 'sessionId', 'token', '$timeout', function($scope, OTSession, apiKey, sessionId, token, $timeout) {
                 $scope.chat = [];
 				var statusRef = new Firebase('https://vinogautam.firebaseio.com/opentok/');
-				statusRef.on('value', function(snapshot) {
-					angular.forEach(snapshot.val(), function(v,k){
+				statusRef.on('child_added', function(snapshot) {
+					//angular.forEach(snapshot.val(), function(v,k){
+						v = snapshot.val();
 						v.hash = CryptoJS.MD5(v.email).toString();
 						$scope.chat.push(v);
-					});
+						$timeout(function(){
+							jQuery("#messagesDiv").scrollTop(jQuery("#messagesDiv")[0].scrollHeight);
+						}, 500);
+						$scope.visible = true;
+					//});
 				});
 				
 				$scope.gravatar = function(email){
