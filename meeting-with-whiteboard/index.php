@@ -76,10 +76,11 @@ $token = $_GET['token'];
 					<img ng-if="c.email != data.email" ng-src="http://www.gravatar.com/avatar/{{c.hash}}/?s=30"> 
 				</p>
 			</div>
+			<p ng-show="noti">{{noti.name}} is typing...<p>
 			<form>
 				<input size="43" type="text" ng-model="data.name" placeholder="Name">
 				<input size="43" type="text" ng-model="data.email" placeholder="Email">
-				<textarea rows="2" cols="33" ng-model="data.msg" placeholder="Message"></textarea>
+				<textarea rows="2" cols="33" ng-model="data.msg" ng-keyup="send_noti()" placeholder="Message" ng-enter="add();"></textarea>
 				<button ng-click="add();">Post</button>
 			</form>
 		</div>
@@ -162,24 +163,55 @@ $token = $_GET['token'];
 				}
 			}
 		angular.module('demo', ['opentok', 'opentok-whiteboard'])
+		.directive('ngEnter', function() {
+			return function(scope, element, attrs) {
+				element.bind("keydown keypress", function(event) {
+					if(event.which === 13) {
+							scope.$apply(function(){
+									scope.$eval(attrs.ngEnter);
+							});
+							
+							event.preventDefault();
+					}
+				});
+			};
+		})
             .controller('MyCtrl', ['$scope', 'OTSession', 'apiKey', 'sessionId', 'token', '$timeout', function($scope, OTSession, apiKey, sessionId, token, $timeout) {
                 $scope.chat = [];
-				var statusRef = new Firebase('https://vinogautam.firebaseio.com/opentok/');
+				$scope.noti = false;
+				var statusRef = new Firebase('https://vinogautam.firebaseio.com/opentok/<?= $sessionId?>');
 				statusRef.on('child_added', function(snapshot) {
 					//angular.forEach(snapshot.val(), function(v,k){
 						v = snapshot.val();
-						v.hash = CryptoJS.MD5(v.email).toString();
-						$scope.chat.push(v);
-						$timeout(function(){
-							jQuery("#messagesDiv").scrollTop(jQuery("#messagesDiv")[0].scrollHeight);
-						}, 500);
-						$scope.visible = true;
+						if(v.noti)
+						{
+							$scope.noti = v;
+							console.log("fdgdfg tert");
+							$timeout(function(){
+								$scope.noti = false;
+							}, 3000);
+						}
+						else
+						{
+							v.hash = CryptoJS.MD5(v.email).toString();
+							$scope.chat.push(v);
+							$timeout(function(){
+								jQuery("#messagesDiv").scrollTop(jQuery("#messagesDiv")[0].scrollHeight);
+							}, 100);
+							$scope.visible = true;
+						}
 					//});
 				});
 				
 				$scope.gravatar = function(email){
 					encrypt = CryptoJS.MD5(email).toString();
 					return "https://www.gravatar.com/avatar/"+encrypt+"?s=40";
+				};
+				
+				$scope.send_noti = function()
+				{
+					console.log("noti send");
+					statusRef.push({name: $scope.data.name, email: $scope.data.email, noti:true, ts: new Date().getTime()});
 				};
 				
 				$scope.add = function(){
