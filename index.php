@@ -35,5 +35,6 @@ $token = $apiObj->generateToken($sessionId);
     <body>
         Join Meeting Url as admin : <a target="blank" href="meeting-with-whiteboard/?admin&sessionId=<?= $sessionId;?>&token=<?= $token;?>">Join conf</a><br>
 		Join Meeting Url as client: <a target="blank" href="meeting-with-whiteboard/?sessionId=<?= $sessionId;?>&token=<?= $token;?>">Join conf</a><br>
+		Screensharing: <a target="blank" href="meeting-with-whiteboard/screensharing-extensions/screensharing-test.php?sessionId=<?= $sessionId;?>&token=<?= $token;?>">Join conf</a><br>
     </body>
 </html>
