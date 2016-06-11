@@ -6,119 +6,114 @@ $token = $_GET['token'];
 <html ng-app="demo">
     <head>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <title>OpenTok-Angular Demo</title>
-         
-		 <link rel="stylesheet" type="text/css" href="slick.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="slick.css">
 		<link rel="stylesheet" type="text/css" href="slick-theme.css">
 		<style type="text/css" media="screen">
-             ot-publisher,ot-subscriber,ot-layout {
-                 display: block;
-                 overflow: hidden;
-             }
-             ot-layout {
-				 display: block;
-                width: 30%;
-                height: 300px;
-                position: absolute;
-                top: 0;
-                left: 0;
-             }
-			 .video_container{}
-			 ot-whiteboard {
-                display: block;
-                width: 50%;
-                height: 300px;
-                background-color: #ccc;
-                position: absolute;
-                top: 350px;
-                left: 0;
-            }
-			.slider1 {
-				width: 40%;
-                margin:auto;
-                top: 0;
-				position:absolute;
-				right:0;
-			}
-			.slider2 {
-				width: 40%;
-				margin:auto;
-                top: 390px;
-				position:absolute;
-				right:100px;
-			}
-			.slick-prev::before, .slick-next::before {
+            .slick-prev::before, .slick-next::before {
 				color: black;
 			}
 			.slick-slide{text-align:center;}
 			.slick-slide img{display:inline-block;}
-			iframe{position:absolute; right:0; top:0; width:25%; left:0; margin:auto;height:250px;}
-			.text_chat_container{width:300px;position:fixed;top:0;bottom:0;right:-300px;background-color:#fff;z-index:1000;transition:all ease 1s;border:1px solid;}
-			.text_chat_container.visible{right:0;}
-			.text_chat_icon{position:fixed;bottom:50px;right:50px; width:50px; height:50px;border-radius:50%;background-color:#0074B0;border: 1px solid #004c88;color:#fff;cursor:pointer;z-index:1000;}
-			.text_chat_container form{position:absolute;bottom:0;text-align:center;}
-			#messagesDiv .align_right{text-align:right;}
-			.text_chat_container form{text-align:center;}
-			.text_chat_container form input, .text_chat_container form textarea{width:90%;margin-bottom:10px;}
+			.OT_publisher, .OT_subscriber {
+				height: 200px !important;
+				position: relative !important;
+				width: 100% !important;
+				left:0 !important;
+			}
+			.OT_widget-container{border-radius:5%;}
+			header{background-color:#790303;width:100%; height:40px;margin-bottom:15px;position:relative;}
+			header .fa{font-size:16px;width:16px;height:16px;position:absolute;margin:auto;top:0;bottom:0;color:#fff;}
+			header .fa.fa-bars{left:1%;}
+			header .fa.fa-times{right:1%;}
+			.overall_container{height:500px;}
+			.opentok_actions div{display:inline-block; padding:5px;background-color:#790303;color:#fff;}
+			.opentok_actions div.selected{background-color:#fff;border:1px solid #790303;color:#790303;}
          </style>
-		 <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+		 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
     </head>
     <body ng-controller="MyCtrl">
         
-		<div class="text_chat_icon" ng-click="visible=!visible;">
-			<i class="fa fa-comments"></i>
-		</div>
-		<div class="text_chat_container" ng-class="{visible:visible}">
-			<div id="messagesDiv" style="height:450px;overflow:auto;">
-				<p ng-repeat="c in chat" ng-class="{align_right: c.email != data.email}">
-					<img ng-if="c.email == data.email" ng-src="http://www.gravatar.com/avatar/{{c.hash}}/?s=30"> 
-					{{c.msg}}
-					<img ng-if="c.email != data.email" ng-src="http://www.gravatar.com/avatar/{{c.hash}}/?s=30"> 
-				</p>
+		<div class="container-fluid">
+			<div class="row">
+				<header>
+					<i class="fa fa-bars"></i>
+					<i class="fa fa-times"></i>
+				</header>
 			</div>
-			<p ng-show="noti">{{noti.name}} is typing...<p>
-			<form>
-				<input size="43" type="text" ng-model="data.name" placeholder="Name">
-				<input size="43" type="text" ng-model="data.email" placeholder="Email">
-				<textarea rows="2" cols="33" ng-model="data.msg" ng-keyup="send_noti()" placeholder="Message" ng-enter="add();"></textarea>
-				<button ng-click="add();">Post</button>
-			</form>
-		</div>
-		
-		<div class="video_container" >
-            <ot-layout props="{animate:true}">
-                <ot-subscriber ng-repeat="stream in streams" 
-                    stream="stream" 
-                    props="{style: {nameDisplayMode: 'off'}}">
-                </ot-subscriber>
-                <ot-publisher id="publisher" 
-                    props="{style: {nameDisplayMode: 'off'}, resolution: '500x300', frameRate: 30}">
-                </ot-publisher>
-            </ot-layout>
-        </div>
-        
-		<div class="whiteboard_container" >
-			<ot-whiteboard width="1280" height="720"></ot-whiteboard>
-		</div>
-		
-		<section class=" slider1">
-			<?php for($i=1;$i<=6;$i++){?>
-			<div>
-			  <img src="http://placehold.it/350x300?text=<?= $i?>">
+			<div class="row">
+				<div class="col-sm-12 col-md-3 col-lg-3" ng-cloak>
+					<div class="video_container" >
+						<ot-layout props="{animate:true}">
+							<ot-subscriber ng-repeat="stream in streams" 
+								stream="stream" 
+								props="{style: {nameDisplayMode: 'off'}}">
+							</ot-subscriber>
+							<ot-publisher id="publisher" 
+								props="{style: {nameDisplayMode: 'off'}, resolution: '500x300', frameRate: 30}">
+							</ot-publisher>
+						</ot-layout>
+					</div>
+					<div class="text_chat_container" ng-class="{visible:visible}">
+						<div id="messagesDiv" style="height:250px;overflow:auto;">
+							<p ng-repeat="c in chat" ng-class="{align_right: c.email != data.email}">
+								<img ng-if="c.email == data.email" ng-src="http://www.gravatar.com/avatar/{{c.hash}}/?s=30"> 
+								{{c.msg}}
+								<img ng-if="c.email != data.email" ng-src="http://www.gravatar.com/avatar/{{c.hash}}/?s=30"> 
+							</p>
+						</div>
+						<p ng-show="noti">{{noti.name}} is typing...<p>
+						<form>
+							<input size="43" type="text" ng-model="data.name" placeholder="Name">
+							<input size="43" type="text" ng-model="data.email" placeholder="Email">
+							<textarea rows="2" cols="33" ng-model="data.msg" ng-keyup="send_noti()" placeholder="Message" ng-enter="add();"></textarea>
+							<button ng-click="add();">Post</button>
+						</form>
+					</div>
+				</div>
+				<div class="col-sm-8 col-md-8 col-lg-8">
+					<div class="row">
+						<div class="col-sm-12 col-md-12 col-lg-12 overall_container">
+							<div class="whiteboard_container" ng-show="whiteboard">
+								<ot-whiteboard width="1280" height="720"></ot-whiteboard>
+							</div>
+							
+							<section class=" slider1" ng-show="presentation">
+								<?php for($i=1;$i<=6;$i++){?>
+								<div>
+								  <img src="http://placehold.it/350x300?text=<?= $i?>">
+								</div>
+								<?php }?>
+							  </section>
+							<?php if(isset($_GET['admin'])){?>
+							  <section class=" slider2" ng-show="presentation">
+								<?php for($i=1;$i<=6;$i++){?>
+								<div>
+								  <img src="http://placehold.it/100x150?text=<?= $i?>">
+								</div>
+								<?php }?>
+							  </section>
+							<?php }?>
+							
+							<iframe ng-show="video" <?php if(!isset($_GET['admin'])){?>style="pointer-events:none;"<?php }?> id="youtube-player" width="640" height="360" src="//www.youtube.com/embed/geTgZcHrXTc?enablejsapi=1&version=3&playerapiid=ytplayer" frameborder="0" allowfullscreen="true" allowscriptaccess="always"></iframe>
+						</div>
+						<div class="col-sm-12 col-md-12 col-lg-12 opentok_actions">
+							<div ng-init="presentation=true;" ng-class="{selected:presentation}" ng-click="presentation=true;whiteboard=false;video=false;">
+								Presentation
+							</div>
+							<div ng-class="{selected:whiteboard}" ng-click="presentation=false;whiteboard=true;video=false;">
+								Whiteboard
+							</div>
+							<div ng-class="{selected:video}" ng-click="presentation=false;whiteboard=false;video=true;">
+								Video
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
-			<?php }?>
-		  </section>
-		<?php if(isset($_GET['admin'])){?>
-		  <section class=" slider2">
-			<?php for($i=1;$i<=6;$i++){?>
-			<div>
-			  <img src="http://placehold.it/100x150?text=<?= $i?>">
-			</div>
-			<?php }?>
-		  </section>
-		<?php }?>
-		
-		<iframe <?php if(!isset($_GET['admin'])){?>style="pointer-events:none;"<?php }?> id="youtube-player" width="640" height="360" src="//www.youtube.com/embed/geTgZcHrXTc?enablejsapi=1&version=3&playerapiid=ytplayer" frameborder="0" allowfullscreen="true" allowscriptaccess="always"></iframe>
+		</div>
 		
         <script src="https://code.jquery.com/jquery-2.2.0.min.js" type="text/javascript" charset="utf-8"></script>
         
@@ -127,7 +122,8 @@ $token = $_GET['token'];
 		
 		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.9.25/paper-core.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="//static.opentok.com/v2.6/js/opentok.js" type="text/javascript" charset="utf-8"></script>
+		<script src="//static.opentok.com/v2.6/js/opentok.js" type="text/javascript" charset="utf-8"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../OpenTok-Angular-master/opentok-layout.js" type="text/javascript" charset="utf-8"></script>
         <script src="../OpenTok-Angular-master/opentok-angular.js" type="text/javascript" charset="utf-8"></script>
         <script src="../opentok-whiteboard-master/opentok-whiteboard.js" type="text/javascript" charset="utf-8"></script>
