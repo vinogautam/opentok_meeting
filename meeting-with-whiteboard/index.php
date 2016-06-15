@@ -29,12 +29,29 @@ $token = $_GET['token'];
 			header .fa.fa-bars{left:1%;}
 			header .fa.fa-times{right:1%;}
 			.overall_container{height:500px;}
-			.opentok_actions div{display:inline-block; padding:5px;background-color:#790303;color:#fff;}
-			.opentok_actions div.selected{background-color:#fff;border:1px solid #790303;color:#790303;}
+			.side_menu li.selected{background-color:#fff;border:1px solid #790303;color:#790303;}
+			.side_menu{position:absolute;top:40px;bottom:0;left:0;background-color:#890101;z-index:99;}
+			.side_menu ul{
+				color: #fff;
+				list-style: outside none none;
+				margin: 0;
+				padding: 0;
+			}
+			.side_menu ul li{padding:15px;}
+			ot-whiteboard {
+                display: block;
+                width: 100%;
+                height:400px;
+                position: absolute;
+                left: 0;
+                right: 0;
+				z-index:11;
+            }
+			.slider1{margin-bottom:20px;z-index:10;}
          </style>
 		 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
     </head>
-    <body ng-controller="MyCtrl">
+    <body ng-controller="MyCtrl" class="<?= isset($_GET['admin']) ? 'admin_view' : 'desktop_view'; ?>">
         
 		<div class="container-fluid">
 			<div class="row">
@@ -43,6 +60,15 @@ $token = $_GET['token'];
 					<i class="fa fa-times"></i>
 				</header>
 			</div>
+			<?php if(isset($_GET['admin'])){?>
+			<div class="side_menu" ng-show="slide_menu">
+				<ul>
+					<li>Fi</li>
+					<li ng-class="{selected:presentation}"><i class="fa fa-desktop"  ng-click="presentation=true;whiteboard=false;video=false;signal('presentation');"></i></li>
+					<li ng-class="{selected:video}" ><i class="fa fa-youtube-play" ng-click="presentation=false;whiteboard=false;video=true;signal('video');"></i></li>
+				</ul>
+			</div>
+			<?php }?>
 			<div class="row">
 				<div class="col-sm-12 col-md-3 col-lg-3" ng-cloak>
 					<div class="video_container" >
@@ -73,20 +99,19 @@ $token = $_GET['token'];
 						</form>
 					</div>
 				</div>
-				<div class="col-sm-8 col-md-8 col-lg-8">
+				<div class="col-sm-12 col-md-9 col-lg-9">
 					<div class="row">
 						<div class="col-sm-12 col-md-12 col-lg-12 overall_container">
-							<div class="whiteboard_container" ng-show="whiteboard">
+							<div class="presentation_container" ng-show="presentation">
 								<ot-whiteboard width="1280" height="720"></ot-whiteboard>
+								<section class=" slider1">
+									<?php for($i=1;$i<=6;$i++){?>
+									<div>
+									  <img src="http://placehold.it/700x400?text=<?= $i?>">
+									</div>
+									<?php }?>
+								</section>
 							</div>
-							
-							<section class=" slider1" ng-show="presentation">
-								<?php for($i=1;$i<=6;$i++){?>
-								<div>
-								  <img src="http://placehold.it/350x300?text=<?= $i?>">
-								</div>
-								<?php }?>
-							  </section>
 							<?php if(isset($_GET['admin'])){?>
 							  <section class=" slider2" ng-show="presentation">
 								<?php for($i=1;$i<=6;$i++){?>
@@ -98,17 +123,6 @@ $token = $_GET['token'];
 							<?php }?>
 							
 							<iframe ng-show="video" <?php if(!isset($_GET['admin'])){?>style="pointer-events:none;"<?php }?> id="youtube-player" width="640" height="360" src="//www.youtube.com/embed/geTgZcHrXTc?enablejsapi=1&version=3&playerapiid=ytplayer" frameborder="0" allowfullscreen="true" allowscriptaccess="always"></iframe>
-						</div>
-						<div class="col-sm-12 col-md-12 col-lg-12 opentok_actions">
-							<div ng-init="presentation=true;" ng-class="{selected:presentation}" ng-click="presentation=true;whiteboard=false;video=false;">
-								Presentation
-							</div>
-							<div ng-class="{selected:whiteboard}" ng-click="presentation=false;whiteboard=true;video=false;">
-								Whiteboard
-							</div>
-							<div ng-class="{selected:video}" ng-click="presentation=false;whiteboard=false;video=true;">
-								Video
-							</div>
 						</div>
 					</div>
 				</div>
@@ -175,6 +189,7 @@ $token = $_GET['token'];
             .controller('MyCtrl', ['$scope', 'OTSession', 'apiKey', 'sessionId', 'token', '$timeout', function($scope, OTSession, apiKey, sessionId, token, $timeout) {
                 $scope.chat = [];
 				$scope.noti = false;
+				$scope.presentation = true;
 				var statusRef = new Firebase('https://vinogautam.firebaseio.com/opentok/<?= $sessionId?>');
 				statusRef.on('child_added', function(snapshot) {
 					//angular.forEach(snapshot.val(), function(v,k){
@@ -245,6 +260,24 @@ $token = $_GET['token'];
 				});
 				$scope.streams = OTSession.streams;
 				
+				$scope.signal = function(data){
+					player.stopVideo();
+					OTSession.session.signal( 
+							{  type: 'admin-signal',
+							   data: data
+							}, 
+							function(error) {
+								if (error) {
+								  console.log("signal error ("
+											   + error.code
+											   + "): " + error.message);
+								} else {
+								  console.log("signal sent.");
+								}
+							}
+					);
+				};
+				
 				$('.slider1').slick({
 				  slidesToShow: 1,
 				  slidesToScroll: 1,
@@ -270,11 +303,25 @@ $token = $_GET['token'];
 				<?php if(isset($_GET['admin'])){?>
 				OTSession.session.on({
                     sessionConnected: function() {
+						$scope.$apply(function(){$scope.slide_menu = true;});
 						$('.slider1').on('afterChange', function(event, slick, currentSlide){
 						  console.log(currentSlide);
 						  OTSession.session.signal( 
 							{  type: 'presentationControl',
 							   data: {slide:currentSlide}
+							}, 
+							function(error) {
+								if (error) {
+								  console.log("signal error ("
+											   + error.code
+											   + "): " + error.message);
+								} else {
+								  console.log("signal sent.");
+								}
+							});
+							$scope.clear();
+							OTSession.session.signal( 
+							{  type: 'otWhiteboard_clear'
 							}, 
 							function(error) {
 								if (error) {
@@ -300,6 +347,25 @@ $token = $_GET['token'];
 						player.playVideo();
 					else
 						player.pauseVideo();
+				});
+				OTSession.session.on('signal:admin-signal', function (event) {
+					if(event.data == 'presentation')
+					{
+						$scope.$apply(function(){
+							$scope.presentation = true;
+							$scope.video = false;
+						});
+						player.pauseVideo();
+					}
+					else if(event.data == 'video')
+					{
+						$scope.$apply(function(){
+							$scope.presentation = false;
+							$scope.video = true;
+						});
+						player.stopVideo();
+					}
+					
 				});
 				<?php }?>
 			}])
