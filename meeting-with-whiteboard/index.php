@@ -29,7 +29,7 @@ $token = $_GET['token'];
 			header .fa.fa-bars{left:1%;}
 			header .fa.fa-times{right:1%;}
 			.overall_container{height:500px;}
-			.side_menu li.selected{background-color:#fff;border:1px solid #790303;color:#790303;}
+			.side_menu li.selected{background-color:#790303;border:1px solid #790303;}
 			.side_menu{position:absolute;top:40px;bottom:0;left:0;background-color:#890101;z-index:99;}
 			.side_menu ul{
 				color: #fff;
@@ -37,7 +37,7 @@ $token = $_GET['token'];
 				margin: 0;
 				padding: 0;
 			}
-			.side_menu ul li{padding:15px;}
+			.side_menu ul li{padding:15px;position:relative;}
 			ot-whiteboard {
                 display: block;
                 width: 100%;
@@ -48,6 +48,11 @@ $token = $_GET['token'];
 				z-index:11;
             }
 			.slider1{margin-bottom:20px;z-index:10;}
+			.sub_menu{position:absolute;left:100%;display:none;top:0;background-color:#A13535;width:300px;}
+			.side_menu ul li:hover .sub_menu{display:block;}
+			.sub_menu h3{margin:0;font-size:16px;background-color:#790303;padding: 16px 5px;}
+			.sub_menu input[type='text']{background:none;border:none;border-bottom:1px solid #fff;width:100%;}
+			.sub_menu ul{margin:20px 0;}
          </style>
 		 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
     </head>
@@ -64,8 +69,22 @@ $token = $_GET['token'];
 			<div class="side_menu" ng-show="slide_menu">
 				<ul>
 					<li>Fi</li>
-					<li ng-class="{selected:presentation}"><i class="fa fa-desktop"  ng-click="presentation=true;whiteboard=false;video=false;signal('presentation');"></i></li>
-					<li ng-class="{selected:video}" ><i class="fa fa-youtube-play" ng-click="presentation=false;whiteboard=false;video=true;signal('video');"></i></li>
+					<li ng-class="{selected:presentation}">
+						<i class="fa fa-desktop"  ng-click="presentation=true;whiteboard=false;video=false;signal('presentation');"></i>
+						<div class="sub_menu">
+							<h3>Presentations</h3>
+							<span><input ng-model="psearch"></span>
+							<ul>
+								<li></li>
+							</ul>
+							<div class="menu_bottom">
+								<input id="convert_ppt" type="file" >
+							</div>
+						</div>
+					</li>
+					<li ng-class="{selected:video}" >
+						<i class="fa fa-youtube-play" ng-click="presentation=false;whiteboard=false;video=true;signal('video');"></i>
+					</li>
 				</ul>
 			</div>
 			<?php }?>
@@ -213,6 +232,56 @@ $token = $_GET['token'];
 						}
 					//});
 				});
+				
+				$(document).on("change", "#convert_ppt", function(e) {
+					handleFileSelect(e, true);
+				});
+				
+				var formdata = !!window.FormData;
+
+				function handleFileSelect(evt, manual) {
+					evt.stopPropagation();
+					evt.preventDefault();
+					var files;
+					files = evt.target.files;
+					
+					for (var i = 0, f; f = files[i]; i++) {
+						if (f.type !== "") {
+							var filename = f.name;
+							var formData = formdata ? new FormData() : null;
+							formData.append('File', files[i]);
+							formData.append('OutputFormat', 'jpg');
+							formData.append('filename', filename);
+							//formData.append('StoreFile', true);
+							formData.append('ApiKey', '938074523');
+							formData.append('OutputFileName', filename+'.zip');
+							formData.append('JpgQuality', 100);
+
+							file_convert_to_jpg(formData);
+						} else {
+							progress_status(random_id, 0, "Invalid File Format...");
+						}
+					}
+
+				}
+
+				function file_convert_to_jpg(formData) {
+					$.ajax({
+						url: "https://do.convertapi.com/PowerPoint2Image",
+						type: "POST",
+						data: formData,
+						processData: false,
+						contentType: false,
+						success: function(response) {
+							$.post("save.php", {data:response}, function(){
+								
+							});
+						},
+						error: function(jqXHR) {
+							alert("Error in file conversion");
+						}
+					});
+				}
 				
 				$scope.gravatar = function(email){
 					encrypt = CryptoJS.MD5(email).toString();
