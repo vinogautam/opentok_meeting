@@ -75,7 +75,7 @@ $token = $_GET['token'];
 							<h3>Presentations</h3>
 							<span><input ng-model="psearch"></span>
 							<ul>
-								<li></li>
+								<li ng-repeat="p in presentation_files" ng-click="selected_file(p.folder, p.files)">{{p.name}}</li>
 							</ul>
 							<div class="menu_bottom">
 								<input id="convert_ppt" type="file" >
@@ -191,6 +191,28 @@ $token = $_GET['token'];
 					scope.video_noti('pause');
 				}
 			}
+		function setCookie(cname, cvalue, exdays) {
+			var d = new Date();
+			d.setTime(d.getTime() + (exdays*24*60*60*1000));
+			var expires = "expires="+d.toUTCString();
+			document.cookie = cname + "=" + cvalue + "; " + expires;
+		}
+
+		function getCookie(cname) {
+			var name = cname + "=";
+			var ca = document.cookie.split(';');
+			for(var i = 0; i < ca.length; i++) {
+				var c = ca[i];
+				while (c.charAt(0) == ' ') {
+					c = c.substring(1);
+				}
+				if (c.indexOf(name) == 0) {
+					return c.substring(name.length, c.length);
+				}
+			}
+			return "";
+		}
+		
 		angular.module('demo', ['opentok', 'opentok-whiteboard'])
 		.directive('ngEnter', function() {
 			return function(scope, element, attrs) {
@@ -209,6 +231,9 @@ $token = $_GET['token'];
                 $scope.chat = [];
 				$scope.noti = false;
 				$scope.presentation = true;
+				
+				$scope.presentation_files = getCookie('presentation') ? JSON.parse(getCookie('presentation')) : [];
+				
 				var statusRef = new Firebase('https://vinogautam.firebaseio.com/opentok/<?= $sessionId?>');
 				statusRef.on('child_added', function(snapshot) {
 					//angular.forEach(snapshot.val(), function(v,k){
@@ -251,13 +276,12 @@ $token = $_GET['token'];
 							var formData = formdata ? new FormData() : null;
 							formData.append('File', files[i]);
 							formData.append('OutputFormat', 'jpg');
-							formData.append('filename', filename);
-							//formData.append('StoreFile', true);
+							formData.append('StoreFile', 'true');
 							formData.append('ApiKey', '938074523');
-							formData.append('OutputFileName', filename+'.zip');
 							formData.append('JpgQuality', 100);
+							formData.append('AlternativeParser', 'false');
 
-							file_convert_to_jpg(formData);
+							file_convert_to_jpg(formData, filename);
 						} else {
 							progress_status(random_id, 0, "Invalid File Format...");
 						}
@@ -265,22 +289,48 @@ $token = $_GET['token'];
 
 				}
 
-				function file_convert_to_jpg(formData) {
+				function file_convert_to_jpg(formData, filename) {
 					$.ajax({
 						url: "https://do.convertapi.com/PowerPoint2Image",
 						type: "POST",
 						data: formData,
 						processData: false,
 						contentType: false,
-						success: function(response) {
-							$.post("save.php", {data:response}, function(){
-								
+						success: function(response, textStatus, request) {
+							$.post("save.php", {data:request.getResponseHeader('FileUrl')}, function(data){
+								if(data != 'error')
+								{	
+									old_data = getCookie('presentation') ? JSON.parse(getCookie('presentation')) : [];
+									new_data = JSON.parse(data);
+									new_data.name = filename;
+									old_data.push(new_data);
+									setCookie('presentation', JSON.stringify(old_data), 365);
+									$scope.$apply(function(){
+										$scope.presentation_files = old_data;
+										$scope.selected_file(new_data.folder, new_data.files);
+									});
+								}
 							});
 						},
 						error: function(jqXHR) {
 							alert("Error in file conversion");
 						}
 					});
+				}
+				
+				$scope.selected_file = function(folder, files)
+				{
+					console.log(folder, files);
+					$(".slider1").slick('unslick');
+					$(".slider2").slick('unslick');
+					$(".slider1").empty();
+					$(".slider2").empty();
+					angular.forEach(files, function(v,k){
+						$('.slider1').append("<div><img width='700' height='400' src='extract/"+folder+"/"+v+"'></div>");
+						$('.slider2').append("<div><img width='100' height='150' src='extract/"+folder+"/"+v+"'></div>");
+					});
+					
+					$scope.construct_slider();
 				}
 				
 				$scope.gravatar = function(email){
@@ -347,27 +397,33 @@ $token = $_GET['token'];
 					);
 				};
 				
-				$('.slider1').slick({
-				  slidesToShow: 1,
-				  slidesToScroll: 1,
-				  arrows: false,
-				  fade: true,
-				  <?php if(isset($_GET['admin'])){?>
-				  asNavFor: '.slider2'
-				  <?php }else{?>
-				  swipe:false
-				  <?php }?>
-				});
-				<?php if(isset($_GET['admin'])){?>
-				$('.slider2').slick({
-				  slidesToShow: 3,
-				  slidesToScroll: 1,
-				  asNavFor: '.slider1',
-				  dots: true,
-				  centerMode: true,
-				  focusOnSelect: true
-				});
-				<?php }?>
+				$scope.construct_slider = function(){
+				
+					$('.slider1').slick({
+					  slidesToShow: 1,
+					  slidesToScroll: 1,
+					  arrows: false,
+					  fade: true,
+					  <?php if(isset($_GET['admin'])){?>
+					  asNavFor: '.slider2'
+					  <?php }else{?>
+					  swipe:false
+					  <?php }?>
+					});
+					<?php if(isset($_GET['admin'])){?>
+					$('.slider2').slick({
+					  slidesToShow: 3,
+					  slidesToScroll: 1,
+					  asNavFor: '.slider1',
+					  dots: true,
+					  centerMode: true,
+					  focusOnSelect: true
+					});
+					<?php }?>
+				
+				};
+				
+				$scope.construct_slider();
 				
 				<?php if(isset($_GET['admin'])){?>
 				OTSession.session.on({
