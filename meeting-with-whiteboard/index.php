@@ -16,7 +16,7 @@ $token = $_GET['token'];
 				color: black;
 			}
 			.slick-slide{text-align:center;}
-			.slick-slide img{display:inline-block;}
+			.slick-slide img{display:inline-block;max-width:100%;}
 			.OT_publisher, .OT_subscriber {
 				height: 200px !important;
 				position: relative !important;
@@ -53,10 +53,11 @@ $token = $_GET['token'];
 			.sub_menu h3{margin:0;font-size:16px;background-color:#790303;padding: 16px 5px;}
 			.sub_menu input[type='text']{background:none;border:none;border-bottom:1px solid #fff;width:100%;}
 			.sub_menu ul{margin:20px 0;}
+			.client_view .OT_panel{display:none;}
          </style>
 		 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
     </head>
-    <body ng-controller="MyCtrl" class="<?= isset($_GET['admin']) ? 'admin_view' : 'desktop_view'; ?>">
+    <body ng-controller="MyCtrl" class="<?= isset($_GET['admin']) ? 'admin_view' : 'client_view'; ?>">
         
 		<div class="container-fluid">
 			<div class="row">
@@ -84,6 +85,16 @@ $token = $_GET['token'];
 					</li>
 					<li ng-class="{selected:video}" >
 						<i class="fa fa-youtube-play" ng-click="presentation=false;whiteboard=false;video=true;signal('video');"></i>
+						<div class="sub_menu">
+							<h3>Youtube</h3>
+							<span><input ng-model="newvideo"></span>
+							<ul>
+								<li ng-repeat="p in youtube_list" ng-click="selected_file(p)">{{p.name}}</li>
+							</ul>
+							<div class="menu_bottom">
+								<input id="convert_ppt" type="file" >
+							</div>
+						</div>
 					</li>
 				</ul>
 			</div>
@@ -318,9 +329,8 @@ $token = $_GET['token'];
 					});
 				}
 				
-				$scope.selected_file = function(folder, files)
+				$scope.selected_file = function(folder, files, admin)
 				{
-					console.log(folder, files);
 					$(".slider1").slick('unslick');
 					$(".slider2").slick('unslick');
 					$(".slider1").empty();
@@ -330,6 +340,9 @@ $token = $_GET['token'];
 						$('.slider2').append("<div><img width='100' height='150' src='extract/"+folder+"/"+v+"'></div>");
 					});
 					
+					if(admin === undefined)
+						$scope.signal({type: 'presentation_change', folder: folder, files: files}, true);
+					$scope.clear();
 					$scope.construct_slider();
 				}
 				
@@ -379,11 +392,15 @@ $token = $_GET['token'];
 				});
 				$scope.streams = OTSession.streams;
 				
-				$scope.signal = function(data){
+				$scope.signal = function(data, isobj){
+					
+					data = isobj === undefined ? {type: data} : data;
+					
 					player.stopVideo();
 					OTSession.session.signal( 
-							{  type: 'admin-signal',
-							   data: data
+							{  
+								type: 'admin-signal' ,
+								data: data
 							}, 
 							function(error) {
 								if (error) {
@@ -474,7 +491,14 @@ $token = $_GET['token'];
 						player.pauseVideo();
 				});
 				OTSession.session.on('signal:admin-signal', function (event) {
-					if(event.data == 'presentation')
+					console.log(event);
+					if(event.data.type == 'presentation_change')
+					{
+						$scope.$apply(function(){
+							$scope.selected_file(event.data.folder, event.data.files, 1);
+						});
+					}
+					else if(event.data.type == 'presentation')
 					{
 						$scope.$apply(function(){
 							$scope.presentation = true;
@@ -482,7 +506,7 @@ $token = $_GET['token'];
 						});
 						player.pauseVideo();
 					}
-					else if(event.data == 'video')
+					else if(event.data.type == 'video')
 					{
 						$scope.$apply(function(){
 							$scope.presentation = false;
