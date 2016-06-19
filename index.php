@@ -6,8 +6,8 @@ if (!file_exists($autoloader)) {
 require($autoloader);
 
 use OpenTok\OpenTok;
-$API_KEY = '45593352';
-$API_SECRET = '95761869dfa8c20921a6178a633e7738bf4590a6';
+$API_KEY = '45609232';
+$API_SECRET = '5d9b20b1ebafcc06a0ee31c605bfd31de6de4242';
 $apiObj = new OpenTok($API_KEY, $API_SECRET);
 $session = $apiObj->createSession();
 $sessionId = $session->getSessionId(); 
