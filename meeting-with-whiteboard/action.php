@@ -69,13 +69,19 @@
 				$scope.presentation_files = getCookie('presentation') ? JSON.parse(getCookie('presentation')) : [];
 				
 				$scope.addnew_video = function(){
-					$scope.youtube_list.push($scope.newvideo);
-					setCookie('youtube_list', JSON.stringify($scope.youtube_list));
+					if($scope.newvideo)
+					{
+						$scope.youtube_list.push($scope.newvideo);
+						setCookie('youtube_list', JSON.stringify($scope.youtube_list));
+						$scope.newvideo = "";
+					}
 				};
 				
 				$scope.change_video = function(p, admin){
-					$("#youtube-player").attr("src", p);
+					player.loadVideoById(p, 0, "default");
+					player.stopVideo();
 					$scope.video = true;
+					$scope.presentation = false;
 					if(admin === undefined)
 						$scope.signal({type: 'video_change', video: p}, true);
 				};
@@ -326,6 +332,7 @@
 					$('.slider1').slick('slickGoTo', event.data.slide);
 				});
 				OTSession.session.on('signal:youtube-player', function (event) {
+					console.log(event);
 					if(event.data == 'start')
 						player.playVideo();
 					else
